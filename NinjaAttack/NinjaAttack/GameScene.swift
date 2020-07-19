@@ -35,5 +35,78 @@ class GameScene: SKScene {
     backgroundColor = SKColor.white
     player.position = CGPoint(x: size.width * 0.1, y: size.height * 0.5)
     addChild(player)
+
+    run(SKAction.repeatForever(SKAction.sequence([
+      SKAction.run(addMonster),
+      SKAction.wait(forDuration: 1.0)
+    ])))
+  }
+
+  private func addMonster() {
+    let monster = SKSpriteNode(imageNamed: "monster")
+    let actualY = random(min: monster.size.height/2, max: size.height - monster.size.height/2)
+
+    monster.position = CGPoint(x: size.width + monster.size.width/2, y: actualY)
+    addChild(monster)
+
+    let actualDuration = random(min: 2, max: 4)
+    let actionMove = SKAction.move(to: CGPoint(x: -monster.size.width/2, y: actualY), duration: TimeInterval(actualDuration))
+    let actionMoveDone = SKAction.removeFromParent()
+
+    monster.run(SKAction.sequence([actionMove, actionMoveDone]))
+  }
+
+  func random(min: CGFloat, max: CGFloat) -> CGFloat {
+    return (CGFloat(arc4random()) / CGFloat(UINT32_MAX) * (max - min)) + min
+  }
+
+  override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    guard let touch = touches.first else { return }
+
+    let touchLocation = touch.location(in: self)
+    let projectile = SKSpriteNode(imageNamed: "projectile")
+    projectile.position = player.position
+
+    let offset = touchLocation - player.position
+
+    guard offset.x > 0 else { return }
+
+    addChild(projectile)
+
+    let direction = offset.normalized()
+    let shotAmount = direction * size.width * 2
+    let destination = projectile.position + shotAmount
+
+    let actionMove = SKAction.move(to: destination, duration: 2)
+    let actionMoveDone = SKAction.removeFromParent()
+    projectile.run(SKAction.sequence([actionMove, actionMoveDone]))
+  }
+}
+
+
+// MARK: - CGPoint helper
+func +(left: CGPoint, right: CGPoint) -> CGPoint {
+  return CGPoint(x: left.x + right.x, y: left.y + right.y)
+}
+
+func -(left: CGPoint, right: CGPoint) -> CGPoint {
+  return CGPoint(x: left.x - right.x, y: left.y - right.y)
+}
+
+func *(point: CGPoint, scalar: CGFloat) -> CGPoint {
+  return CGPoint(x: point.x * scalar, y: point.y * scalar)
+}
+
+func /(point: CGPoint, scalar: CGFloat) -> CGPoint {
+  return CGPoint(x: point.x / scalar, y: point.y / scalar)
+}
+
+extension CGPoint {
+  func length() -> CGFloat {
+    return sqrt(x*x + y*y)
+  }
+
+  func normalized() -> CGPoint {
+    return self / length()
   }
 }
