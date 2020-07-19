@@ -89,6 +89,8 @@ class GameScene: SKScene {
 
     guard offset.x > 0 else { return }
 
+    run(SKAction.playSoundFileNamed("pew-pew-lei.caf", waitForCompletion: false))
+
     addChild(projectile)
 
     let direction = offset.normalized()
@@ -113,6 +115,11 @@ class GameScene: SKScene {
 
 extension GameScene: SKPhysicsContactDelegate {
   func didBegin(_ contact: SKPhysicsContact) {
+
+    let backgroundMusic = SKAudioNode(fileNamed: "background-music-aac.caf")
+    backgroundMusic.autoplayLooped = true
+    addChild(backgroundMusic)
+
     var monsterBody: SKPhysicsBody
     var projectileBody: SKPhysicsBody
     if contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask  {
