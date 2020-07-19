@@ -38,7 +38,7 @@ final class  GameOverScene: SKScene {
     let label = SKLabelNode(fontNamed: "Chalkduster")
     label.text = message
     label.fontSize = 50
-    label.color = SKColor.black
+    label.fontColor = UIColor.black
     label.position = CGPoint(x: size.width/2, y: size.height/2)
     addChild(label)
   }
