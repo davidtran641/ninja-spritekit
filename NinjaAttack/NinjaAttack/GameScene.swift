@@ -28,6 +28,13 @@
 
 import SpriteKit
 
+struct PhysicsCategory {
+  static let none      : UInt32 = 0
+  static let all       : UInt32 = UInt32.max
+  static let monster   : UInt32 = 0b1       // 1
+  static let projectile: UInt32 = 0b10      // 2
+}
+
 class GameScene: SKScene {
   let player = SKSpriteNode(imageNamed: "player")
 
@@ -40,6 +47,9 @@ class GameScene: SKScene {
       SKAction.run(addMonster),
       SKAction.wait(forDuration: 1.0)
     ])))
+
+    physicsWorld.gravity = .zero
+    physicsWorld.contactDelegate = self
   }
 
   private func addMonster() {
@@ -54,6 +64,14 @@ class GameScene: SKScene {
     let actionMoveDone = SKAction.removeFromParent()
 
     monster.run(SKAction.sequence([actionMove, actionMoveDone]))
+
+    let body = SKPhysicsBody(rectangleOf: monster.size)
+    body.isDynamic = true
+    body.categoryBitMask = PhysicsCategory.monster
+    body.contactTestBitMask = PhysicsCategory.projectile
+    body.collisionBitMask = PhysicsCategory.none
+    monster.physicsBody = body
+
   }
 
   func random(min: CGFloat, max: CGFloat) -> CGFloat {
@@ -80,6 +98,44 @@ class GameScene: SKScene {
     let actionMove = SKAction.move(to: destination, duration: 2)
     let actionMoveDone = SKAction.removeFromParent()
     projectile.run(SKAction.sequence([actionMove, actionMoveDone]))
+
+    let body = SKPhysicsBody(circleOfRadius: projectile.size.width/2)
+    body.isDynamic = true
+    body.categoryBitMask = PhysicsCategory.projectile
+    body.contactTestBitMask = PhysicsCategory.monster
+    body.collisionBitMask = PhysicsCategory.none
+    body.usesPreciseCollisionDetection = true
+
+    projectile.physicsBody = body
+  }
+}
+
+
+extension GameScene: SKPhysicsContactDelegate {
+  func didBegin(_ contact: SKPhysicsContact) {
+    var monsterBody: SKPhysicsBody
+    var projectileBody: SKPhysicsBody
+    if contact.bodyA.categoryBitMask < contact.bodyB.categoryBitMask  {
+      monsterBody = contact.bodyA
+      projectileBody = contact.bodyB
+    } else {
+      monsterBody = contact.bodyB
+      projectileBody = contact.bodyA
+    }
+
+    guard monsterBody.categoryBitMask & PhysicsCategory.monster != 0 &&
+      projectileBody.categoryBitMask & PhysicsCategory.projectile != 0 else { return }
+    guard let monster = monsterBody.node as? SKSpriteNode, let projectile = projectileBody.node as? SKSpriteNode else {
+      return
+    }
+
+    projectTileDidCollideWithMonster(projectile: projectile, monster: monster)
+  }
+
+  func projectTileDidCollideWithMonster(projectile: SKSpriteNode, monster: SKSpriteNode) {
+    print("Hit")
+    monster.removeFromParent()
+    projectile.removeFromParent()
   }
 }
 
