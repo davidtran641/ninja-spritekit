@@ -37,6 +37,7 @@ struct PhysicsCategory {
 
 class GameScene: SKScene {
   let player = SKSpriteNode(imageNamed: "player")
+  var monstersDestroyed = 0
 
   override func didMove(to view: SKView) {
     backgroundColor = SKColor.white
@@ -61,9 +62,11 @@ class GameScene: SKScene {
 
     let actualDuration = random(min: 2, max: 4)
     let actionMove = SKAction.move(to: CGPoint(x: -monster.size.width/2, y: actualY), duration: TimeInterval(actualDuration))
-    let actionMoveDone = SKAction.removeFromParent()
+    let loseAction = SKAction.run {[weak self] in
+      self?.showGameOver()
+    }
 
-    monster.run(SKAction.sequence([actionMove, actionMoveDone]))
+    monster.run(SKAction.sequence([actionMove, loseAction]))
 
     let body = SKPhysicsBody(rectangleOf: monster.size)
     body.isDynamic = true
@@ -72,6 +75,12 @@ class GameScene: SKScene {
     body.collisionBitMask = PhysicsCategory.none
     monster.physicsBody = body
 
+  }
+
+  private func showGameOver() {
+    let reveal = SKTransition.flipHorizontal(withDuration: 0.5)
+    let gameOverScene = GameOverScene(size: self.size, isWon: false)
+    view?.presentScene(gameOverScene, transition: reveal)
   }
 
   func random(min: CGFloat, max: CGFloat) -> CGFloat {
@@ -143,6 +152,13 @@ extension GameScene: SKPhysicsContactDelegate {
     print("Hit")
     monster.removeFromParent()
     projectile.removeFromParent()
+
+    monstersDestroyed += 1
+    if monstersDestroyed > 3 {
+      let reveal = SKTransition.flipHorizontal(withDuration: 0.5)
+      let gameOverScene = GameOverScene(size: self.size, isWon: true)
+      view?.presentScene(gameOverScene, transition: reveal)
+    }
   }
 }
 
